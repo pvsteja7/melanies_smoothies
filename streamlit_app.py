@@ -56,7 +56,7 @@ if ingredients_list:
 
     if time_to_insert:
         safe_name = name_on_order.replace("'", "''") if name_on_order else ""
-        safe_ingredients = ingredients_string.strip().replace("'", "''")
+        safe_ingredients = ingredients_string.replace("'", "")
 
         my_insert_stmt = f"""
         insert into smoothies.public.orders(name_on_order, ingredients)
