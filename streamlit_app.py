@@ -1,5 +1,5 @@
 import streamlit as st
-
+import requests
 from snowflake.snowpark.functions import col
 
 st.title("🥤 Customize Your Smoothie! 🥤")
@@ -22,11 +22,14 @@ ingredients_list = st.multiselect(
 if len(ingredients_list) > 5:
     st.error("You can only select up to 5 ingredients!")
     st.stop()
+
 if ingredients_list:
     ingredients_string = ""
 
     for fruit_chosen in ingredients_list:
         ingredients_string += fruit_chosen + " "
+        smoothiefroot_response = requests.get("https://my.smoothiefroot.com/api/fruit/watermelon")
+        sf_df = st.dataframe(data=smoothiefroot_response.json(), use_container_width=True)
 
     my_insert_stmt = """insert into smoothies.public.orders(name_on_order, ingredients)
     values ('""" + name_on_order + """', '""" + ingredients_string + """')"""
@@ -36,7 +39,3 @@ if ingredients_list:
     if time_to_insert:
         session.sql(my_insert_stmt).collect()
         st.success("Your Smoothie is ordered!", icon="✅")
-import requests
-smoothiefroot_response = requests.get("https://my.smoothiefroot.com/api/fruit/watermelon")
-st.text(smoothiefroot_response.json())
-sf_df = st.dataframe(data=smoothiefroot_response.json(), use_container_width=True)
