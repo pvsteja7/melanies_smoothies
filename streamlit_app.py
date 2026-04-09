@@ -15,7 +15,8 @@ session = cnx.session()
 fruit_df = session.table("smoothies.public.fruit_options").select(
     col("FRUIT_NAME"),
     col("SEARCH_ON")
-).to_pandas()
+)
+pd_df = fruit_df.to_pandas()
 
 fruit_options = fruit_df["FRUIT_NAME"].tolist()
 
@@ -33,8 +34,7 @@ if ingredients_list:
 
         st.subheader(f"{fruit_chosen} Nutrition Information")
 
-        matching_rows = fruit_df.loc[fruit_df["FRUIT_NAME"] == fruit_chosen, "SEARCH_ON"]
-
+        matching_rows = pd_df.loc[pd_df["FRUIT_NAME"] == fruit_chosen, "SEARCH_ON"]
         if not matching_rows.empty:
             search_on = matching_rows.iloc[0]
 
