@@ -1,5 +1,6 @@
 import streamlit as st
 import requests
+import pandas as pd
 from snowflake.snowpark.functions import col
 
 st.title("🥤 Customize Your Smoothie! 🥤")
@@ -11,37 +12,56 @@ st.write("The name on your Smoothie will be:", name_on_order)
 cnx = st.connection("snowflake")
 session = cnx.session()
 
-my_dataframe = session.table("smoothies.public.fruit_options").select(col("FRUIT_NAME"), col("SEARCH_ON"))
+fruit_df = session.table("smoothies.public.fruit_options").select(
+    col("FRUIT_NAME"),
+    col("SEARCH_ON")
+).to_pandas()
+
+fruit_options = fruit_df["FRUIT_NAME"].tolist()
 
 ingredients_list = st.multiselect(
     "Choose up to 5 ingredients:",
-    my_dataframe,
+    fruit_options,
     max_selections=5
 )
 
-if len(ingredients_list) > 5:
-    st.error("You can only select up to 5 ingredients!")
-    st.stop()
-
 if ingredients_list:
     ingredients_string = ""
+
     for fruit_chosen in ingredients_list:
-        ingredients_string += fruit_chosen["FRUIT_NAME"] + " "
-        st.subheader(fruit_chosen["FRUIT_NAME"] + " Nutrition Information")
-        smoothiefroot_response = requests.get(
-            "https://my.smoothiefroot.com/api/fruit/" + fruit_chosen["SEARCH_ON"]
-        )
-    
-        st.dataframe(
-        data=smoothiefroot_response.json(),
-        use_container_width=True
-        )
-   
-    my_insert_stmt = """insert into smoothies.public.orders(name_on_order, ingredients)
-    values ('""" + name_on_order + """', '""" + ingredients_string + """')"""
+        ingredients_string += fruit_chosen + " "
+
+        st.subheader(f"{fruit_chosen} Nutrition Information")
+
+        matching_rows = fruit_df.loc[fruit_df["FRUIT_NAME"] == fruit_chosen, "SEARCH_ON"]
+
+        if not matching_rows.empty:
+            search_on = matching_rows.iloc[0]
+
+            smoothiefroot_response = requests.get(
+                "https://my.smoothiefroot.com/api/fruit/" + search_on
+            )
+
+            if smoothiefroot_response.status_code == 200:
+                st.dataframe(
+                    data=smoothiefroot_response.json(),
+                    use_container_width=True
+                )
+            else:
+                st.warning(f"No nutrition data found for {fruit_chosen}")
+        else:
+            st.warning(f"No search value found for {fruit_chosen}")
 
     time_to_insert = st.button("Submit Order")
 
     if time_to_insert:
+        safe_name = name_on_order.replace("'", "''") if name_on_order else ""
+        safe_ingredients = ingredients_string.strip().replace("'", "''")
+
+        my_insert_stmt = f"""
+        insert into smoothies.public.orders(name_on_order, ingredients)
+        values ('{safe_name}', '{safe_ingredients}')
+        """
+
         session.sql(my_insert_stmt).collect()
         st.success("Your Smoothie is ordered!", icon="✅")
