@@ -32,6 +32,3 @@ for index, row in pending_df.iterrows():
         st.success(f"Order {row['order_id']} marked as filled!")
 
 
-
-a=3 b=5 c=7
-print(a+b+c)
