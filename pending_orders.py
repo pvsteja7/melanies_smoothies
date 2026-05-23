@@ -33,5 +33,5 @@ for index, row in pending_df.iterrows():
 
 
 
-a=3 b=5
-print(a+b)
+a=3 b=5 c=7
+print(a+b+c)
