@@ -30,5 +30,4 @@ for index, row in pending_df.iterrows():
         """).collect()
 
         st.success(f"Order {row['order_id']} marked as filled!")
-
-
+        
